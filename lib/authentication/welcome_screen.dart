@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -41,13 +42,29 @@ class WelcomeScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center, // Center all children
                         children: [
-                          const Text(
-                            'Welcome to Anfal Sacco',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: CustomArrowIcon(), // Custom arrow with elongated filled triangular head
+                                onPressed: () {
+                                  SystemNavigator.pop(); // Exit the app
+                                },
+                                padding: const EdgeInsets.only(left: 0), // Align to left edge
+                                alignment: Alignment.centerLeft,
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'Welcome to Anfal Sacco',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
                           SizedBox(
@@ -97,4 +114,48 @@ class WelcomeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+// Custom arrow icon with elongated filled triangular head and bold outline body
+class CustomArrowIcon extends StatelessWidget {
+  const CustomArrowIcon({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(30, 30), // Matches IconButton size
+      painter: ArrowPainter(),
+    );
+  }
+}
+
+class ArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    // Draw elongated filled triangular head
+    final headPath = Path();
+    headPath.moveTo(size.width * 0.3, size.height * 0.3); // Top point of triangle
+    headPath.lineTo(size.width * 0.0, size.height * 0.5); // Left point, extended for elongation
+    headPath.lineTo(size.width * 0.3, size.height * 0.7); // Bottom point
+    headPath.close();
+    canvas.drawPath(headPath, paint);
+
+    // Draw bold outline body
+    final bodyPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0; // Bold line
+    canvas.drawLine(
+      Offset(size.width * 0.3, size.height * 0.5), // Connect to head
+      Offset(size.width * 0.9, size.height * 0.5), // Right end of body
+      bodyPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
