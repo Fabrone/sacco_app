@@ -6,7 +6,6 @@ import 'package:sacco_app/authentication/welcome_screen.dart';
 import 'package:sacco_app/screens/home_screen.dart';
 import 'package:sacco_app/screens/terms_and_conditions_screen.dart';
 import 'package:sacco_app/services/auth_provider.dart';
-import 'package:go_router/go_router.dart';
 
 void main() {
   runApp(const SaccoApp());
@@ -17,47 +16,26 @@ class SaccoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
-      child: MaterialApp.router(
+      child: MaterialApp(
         title: 'Anfal Sacco',
+        navigatorKey: navigatorKey,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        routerConfig: GoRouter(
-          routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const WelcomeScreen(),
-            ),
-            GoRoute(
-              path: '/register',
-              builder: (context, state) => const RegistrationScreen(),
-            ),
-            GoRoute(
-              path: '/login',
-              builder: (context, state) => const LoginScreen(),
-            ),
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomeScreen(),
-            ),
-            GoRoute(
-              path: '/terms',
-              builder: (context, state) => const TermsAndConditionsScreen(),
-            ),
-          ],
-          redirect: (context, state) {
-            // Prevent app exit on back press by redirecting to WelcomeScreen if no previous route
-            if (state.uri.toString() == '/' && state.matchedLocation == '/') {
-              return null; // Allow WelcomeScreen to be the root
-            }
-            return null;
-          },
-        ),
+        home: const WelcomeScreen(),
+        routes: {
+          '/register': (context) => const RegistrationScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/terms': (context) => const TermsAndConditionsScreen(),
+        },
       ),
     );
   }

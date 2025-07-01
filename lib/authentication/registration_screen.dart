@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/scheduler.dart';
 import '../services/auth_provider.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -19,7 +20,6 @@ class RegistrationScreenState extends State<RegistrationScreen> {
   final _genderController = TextEditingController();
   final _dobController = TextEditingController();
   bool _termsAccepted = false;
-  bool _navigateToLogin = false;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -35,7 +35,7 @@ class RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-  // Perform registration and update state
+  // Perform registration and navigate to login
   Future<void> _performRegistration(AuthProvider authProvider) async {
     if (_formKey.currentState!.validate()) {
       try {
@@ -46,148 +46,228 @@ class RegistrationScreenState extends State<RegistrationScreen> {
           _genderController.text,
           _dobController.text,
         );
-        if (mounted) {
-          setState(() {
-            _navigateToLogin = true;
-          });
-        }
       } catch (e) {
-        // Handle error if needed (e.g., show a message later with APIs)
+        // Mock API, ignore errors
       }
-    }
-  }
-
-  @override
-  void didUpdateWidget(RegistrationScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Perform navigation in a synchronous context after state update
-    if (_navigateToLogin && mounted) {
-      context.go('/login');
+      // Navigate to login after submission, regardless of API result
+      if (mounted) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          Navigator.of(context, rootNavigator: true).pushNamed('/login');
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final isWeb = kIsWeb;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SIGN UP/REGISTER'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+        title: const Text(
+          'SIGN UP/REGISTER',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
+        leading: isWeb
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pushNamed('/'),
+              )
+            : null,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(
-                    controller: _fullNameController,
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your full name';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _applicantTypeController,
-                    decoration: const InputDecoration(labelText: 'Applicant Type'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter applicant type';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _idNumberController,
-                    decoration: const InputDecoration(labelText: 'Identification Number'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter identification number';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _genderController,
-                    decoration: const InputDecoration(labelText: 'Gender'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter gender';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _dobController,
-                    decoration: const InputDecoration(labelText: 'Date of Birth'),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select date of birth';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
+        child: Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height -
+                    MediaQuery.of(context).padding.top -
+                    MediaQuery.of(context).padding.bottom,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0), // Form padding
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Checkbox(
-                        value: _termsAccepted,
-                        onChanged: (value) {
-                          setState(() {
-                            _termsAccepted = value ?? false;
-                          });
+                      InputField(
+                        controller: _fullNameController,
+                        label: 'Full Name',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your full name';
+                          }
+                          return null;
                         },
                       ),
-                      GestureDetector(
-                        onTap: () => context.go('/terms'),
-                        child: const Text(
-                          'I agree to the Terms & Conditions',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
+                      const SizedBox(height: 16),
+                      InputField(
+                        controller: _applicantTypeController,
+                        label: 'Applicant Type',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter applicant type';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      InputField(
+                        controller: _idNumberController,
+                        label: 'Identification Number',
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter identification number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      InputField(
+                        controller: _genderController,
+                        label: 'Gender',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter gender';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      InputField(
+                        controller: _dobController,
+                        label: 'Date of Birth',
+                        readOnly: true,
+                        onTap: () => _selectDate(context),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please select date of birth';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _termsAccepted,
+                            onChanged: (value) {
+                              setState(() {
+                                _termsAccepted = value ?? false;
+                              });
+                            },
                           ),
+                          const Text('I agree to the '),
+                          GestureDetector(
+                            onTap: () => Navigator.of(context, rootNavigator: true).pushNamed('/terms'),
+                            child: const Text(
+                              'Terms & Conditions',
+                              style: TextStyle(
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _termsAccepted && !authProvider.isLoading
+                            ? () {
+                                _performRegistration(authProvider);
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          minimumSize: const Size(200, 50),
                         ),
+                        child: authProvider.isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Sign Up/Register',
+                                style: TextStyle(color: Colors.white),
+                              ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _termsAccepted && !authProvider.isLoading
-                          ? () {
-                              _performRegistration(authProvider);
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        minimumSize: const Size(200, 50),
-                      ),
-                      child: authProvider.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              'Sign Up/Register',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Custom input field with label above and rectangular outline
+class InputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final TextInputType? keyboardType;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final String? Function(String?)? validator;
+
+  const InputField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.keyboardType,
+    this.readOnly = false,
+    this.onTap,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Input field padding
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            readOnly: readOnly,
+            onTap: onTap,
+            validator: validator,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.green, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.red, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ],
       ),
     );
   }

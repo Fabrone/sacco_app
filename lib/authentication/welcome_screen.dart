@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -47,7 +46,7 @@ class WelcomeScreen extends StatelessWidget {
                           Row(
                             children: [
                               IconButton(
-                                icon: CustomArrowIcon(), // Custom arrow with elongated filled triangular head
+                                icon: const CustomArrowIcon(), // Custom arrow with elongated filled triangular head
                                 onPressed: () {
                                   SystemNavigator.pop(); // Exit the app
                                 },
@@ -70,7 +69,7 @@ class WelcomeScreen extends StatelessWidget {
                           SizedBox(
                             width: buttonWidth,
                             child: ElevatedButton(
-                              onPressed: () => context.go('/register'),
+                              onPressed: () => Navigator.of(context, rootNavigator: true).pushNamed('/register'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green[700], // Algae-like green
                                 minimumSize: const Size(0, 50), // Height only, width controlled by SizedBox
@@ -88,7 +87,7 @@ class WelcomeScreen extends StatelessWidget {
                           SizedBox(
                             width: buttonWidth,
                             child: ElevatedButton(
-                              onPressed: () => context.go('/login'),
+                              onPressed: () => Navigator.of(context, rootNavigator: true).pushNamed('/login'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color.fromARGB(255, 134, 149, 135), // Green mixed with gray
                                 minimumSize: const Size(0, 50), // Height only, width controlled by SizedBox
