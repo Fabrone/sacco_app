@@ -20,7 +20,7 @@ class QuickActionButton extends StatelessWidget {
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: backgroundColor ?? Colors.green[50],
+        color: backgroundColor ?? const Color.fromARGB(255, 200, 245, 210), // Default watery green
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(12),
@@ -33,15 +33,15 @@ class QuickActionButton extends StatelessWidget {
                 Icon(
                   icon,
                   size: 24,
-                  color: Colors.green[700],
+                  color: Colors.black, // Changed to black
                 ),
                 const SizedBox(height: 4),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.green[700],
+                    color: Colors.black, // Changed to black
                   ),
                   textAlign: TextAlign.center,
                 ),
