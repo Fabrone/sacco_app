@@ -5,6 +5,7 @@ class QuickActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final Color? backgroundColor;
+  final bool isSmallScreen;
 
   const QuickActionButton({
     super.key,
@@ -12,6 +13,7 @@ class QuickActionButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.backgroundColor,
+    this.isSmallScreen = false,
   });
 
   @override
@@ -20,30 +22,36 @@ class QuickActionButton extends StatelessWidget {
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: backgroundColor ?? const Color.fromARGB(255, 200, 245, 210), // Default watery green
+        color: backgroundColor ?? const Color.fromARGB(255, 200, 245, 210),
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            height: 80,
-            padding: const EdgeInsets.all(8.0),
+            height: isSmallScreen ? 70 : 80,
+            padding: EdgeInsets.all(isSmallScreen ? 6.0 : 8.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
-                  size: 24,
-                  color: Colors.black, // Changed to black
+                  size: isSmallScreen ? 20 : 24,
+                  color: Colors.black,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black, // Changed to black
+                SizedBox(height: isSmallScreen ? 2 : 4),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 9 : 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),

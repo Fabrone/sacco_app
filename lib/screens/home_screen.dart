@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -45,6 +46,9 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+    
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -53,6 +57,7 @@ class HomeScreenState extends State<HomeScreen> {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       },
       child: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           title: const Text(
             'HOME',
@@ -77,12 +82,13 @@ class HomeScreenState extends State<HomeScreen> {
                   size: 24,
                 ),
                 onPressed: () {
-                  // Menu action - can be implemented later
+                  _scaffoldKey.currentState?.openEndDrawer();
                 },
               ),
             ),
           ],
         ),
+        endDrawer: _buildDrawer(),
         body: SafeArea(
           child: Consumer<MemberProvider>(
             builder: (context, memberProvider, child) {
@@ -97,7 +103,7 @@ class HomeScreenState extends State<HomeScreen> {
 
               return SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -110,32 +116,36 @@ class HomeScreenState extends State<HomeScreen> {
                               _formatCurrency(memberData.savingsBalance),
                               null,
                               const Color.fromARGB(255, 146, 241, 154),
+                              isSmallScreen,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: isSmallScreen ? 4 : 6),
                           Expanded(
                             child: _buildBalanceCard(
                               'Loans',
                               _formatCurrency(memberData.loansBalance),
                               null,
                               const Color.fromARGB(230, 234, 177, 148),
+                              isSmallScreen,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: isSmallScreen ? 4 : 6),
                           Expanded(
                             child: _buildCapitalShareCard(
                               memberData.capitalShares.toInt(),
                               memberData.sharePercent,
                               const Color.fromARGB(255, 141, 180, 208),
+                              isSmallScreen,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: isSmallScreen ? 4 : 6),
                           Expanded(
                             child: _buildBalanceCard(
                               'Guarantee-able',
                               _formatCurrency(memberData.guaranteeableAmount),
                               null,
                               const Color.fromARGB(255, 248, 250, 135),
+                              isSmallScreen,
                             ),
                           ),
                         ],
@@ -149,7 +159,7 @@ class HomeScreenState extends State<HomeScreen> {
                       // Quick Actions Section
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -159,12 +169,12 @@ class HomeScreenState extends State<HomeScreen> {
                             Text(
                               'Quick Actions',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: isSmallScreen ? 16 : 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green[700],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: isSmallScreen ? 12 : 16),
                             // First row - 3 buttons
                             Row(
                               children: [
@@ -172,25 +182,28 @@ class HomeScreenState extends State<HomeScreen> {
                                   title: 'SAVE',
                                   icon: Icons.savings,
                                   onPressed: () => Navigator.pushNamed(context, '/savings-payment'),
-                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210), // Watery green
+                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210),
+                                  isSmallScreen: isSmallScreen,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: isSmallScreen ? 6 : 8),
                                 QuickActionButton(
                                   title: 'LOAN REQUEST',
                                   icon: Icons.request_quote,
                                   onPressed: () => Navigator.pushNamed(context, '/loan-request'),
-                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210), // Watery green
+                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210),
+                                  isSmallScreen: isSmallScreen,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: isSmallScreen ? 6 : 8),
                                 QuickActionButton(
                                   title: 'PAY LOAN',
                                   icon: Icons.payment,
                                   onPressed: () => Navigator.pushNamed(context, '/loan-payment'),
-                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210), // Watery green
+                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210),
+                                  isSmallScreen: isSmallScreen,
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: isSmallScreen ? 6 : 8),
                             // Second row - 2 buttons
                             Row(
                               children: [
@@ -198,16 +211,18 @@ class HomeScreenState extends State<HomeScreen> {
                                   title: 'TOP-UP CAPITAL SHARE',
                                   icon: Icons.trending_up,
                                   onPressed: () => Navigator.pushNamed(context, '/capital-topup'),
-                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210), // Watery green
+                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210),
+                                  isSmallScreen: isSmallScreen,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: isSmallScreen ? 6 : 8),
                                 QuickActionButton(
                                   title: 'MEMBER HISTORY',
                                   icon: Icons.history,
                                   onPressed: () => Navigator.pushNamed(context, '/transactions'),
-                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210), // Watery green
+                                  backgroundColor: const Color.fromARGB(255, 200, 245, 210),
+                                  isSmallScreen: isSmallScreen,
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: isSmallScreen ? 6 : 8),
                                 const Expanded(child: SizedBox()), // Empty space for alignment
                               ],
                             ),
@@ -228,11 +243,11 @@ class HomeScreenState extends State<HomeScreen> {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long), // Better icon for transactions
+              icon: Icon(Icons.receipt_long),
               label: 'My Transactions',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.support_agent), // Better icon for contact
+              icon: Icon(Icons.support_agent),
               label: 'Contact',
             ),
           ],
@@ -240,6 +255,63 @@ class HomeScreenState extends State<HomeScreen> {
           selectedItemColor: Colors.green,
           onTap: _onItemTapped,
         ),
+      ),
+    );
+  }
+
+  // Build drawer widget
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Column(
+        children: [
+          // Drawer header with person icon
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
+            decoration: BoxDecoration(
+              color: Colors.green[700],
+            ),
+            child: const Column(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 50,
+                    color: Colors.green,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Member Menu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Menu items section (empty for now)
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: const Column(
+                children: [
+                  Text(
+                    'Menu items will be added here',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -263,15 +335,15 @@ class HomeScreenState extends State<HomeScreen> {
     return 'KSH $formattedInteger.$decimalPart';
   }
 
-  // Custom separator bar widget with improved styling
+  // Custom separator bar widget with improved diamond styling
   Widget _buildSeparatorBar() {
     return LayoutBuilder(
       builder: (context, constraints) {
         double screenWidth = constraints.maxWidth;
-        int diamondCount = (screenWidth / 80).floor().clamp(3, 4); // 3-4 diamonds based on screen width
+        int diamondCount = (screenWidth / 80).floor().clamp(3, 4);
         
         return SizedBox(
-          height: 30, // Increased height to accommodate wider separation
+          height: 30,
           width: double.infinity,
           child: Stack(
             children: [
@@ -282,37 +354,30 @@ class HomeScreenState extends State<HomeScreen> {
                 right: 0,
                 child: Container(
                   height: 2,
-                  color: Colors.black, // Changed to black
+                  color: Colors.black,
                 ),
               ),
               // Bottom horizontal line (black)
               Positioned(
-                top: 20, // Increased separation (was 12, now 20)
+                top: 20,
                 left: 0,
                 right: 0,
                 child: Container(
                   height: 2,
-                  color: Colors.black, // Changed to black
+                  color: Colors.black,
                 ),
               ),
-              // Yellow diamonds - darker, shorter height, wider
+              // Diamond shapes - proper diamonds that don't touch lines
               ...List.generate(diamondCount, (index) {
                 double spacing = screenWidth / (diamondCount + 1);
-                double leftPosition = spacing * (index + 1) - 10; // Adjusted for wider diamond
+                double leftPosition = spacing * (index + 1) - 12; // Adjusted for wider diamond
                 
                 return Positioned(
-                  top: 9, // Centered between the lines
+                  top: 11, // Centered between lines with margin
                   left: leftPosition,
-                  child: Transform.rotate(
-                    angle: 0.785398, // 45 degrees in radians
-                    child: Container(
-                      width: 20, // Increased width (was 16)
-                      height: 12, // Decreased height (was 16)
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 218, 165, 32), // Darker yellow (goldenrod)
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+                  child: CustomPaint(
+                    size: const Size(24, 8), // Width 24, Height 8
+                    painter: DiamondPainter(),
                   ),
                 );
               }),
@@ -323,44 +388,54 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceCard(String title, String value, String? subtitle, Color backgroundColor) {
+  Widget _buildBalanceCard(String title, String value, String? subtitle, Color backgroundColor, bool isSmallScreen) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: backgroundColor,
       child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(8.0),
+        height: isSmallScreen ? 90 : 100,
+        padding: EdgeInsets.all(isSmallScreen ? 4.0 : 6.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 9,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 8,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 9 : 11,
+                  fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
                 textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: isSmallScreen ? 4 : 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 7 : 9,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+              ),
+            ),
+            if (subtitle != null) ...[
+              SizedBox(height: isSmallScreen ? 2 : 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 6 : 8,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ],
@@ -370,104 +445,146 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   // Special card for Capital Share with two columns
-  Widget _buildCapitalShareCard(int shares, double percent, Color backgroundColor) {
+  Widget _buildCapitalShareCard(int shares, double percent, Color backgroundColor, bool isSmallScreen) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: backgroundColor,
       child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(8.0),
+        height: isSmallScreen ? 90 : 100,
+        padding: EdgeInsets.all(isSmallScreen ? 4.0 : 6.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'Capital Share',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Capital Share',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 8 : 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: isSmallScreen ? 4 : 6),
             // Two columns with underlined headers
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.black,
-                              width: 1,
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.black,
+                                width: 0.8,
+                              ),
+                            ),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Shares',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 7 : 8,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
-                        child: const Text(
-                          'Shares',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        shares.toString(),
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: Colors.black,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
+                        SizedBox(height: isSmallScreen ? 2 : 3),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            shares.toString(),
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 7 : 8,
                               color: Colors.black,
-                              width: 1,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 2 : 4),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.black,
+                                width: 0.8,
+                              ),
+                            ),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Percent',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 7 : 8,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
-                        child: const Text(
-                          'Percent',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                        SizedBox(height: isSmallScreen ? 2 : 3),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${percent.toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 7 : 8,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${percent.toStringAsFixed(2)}%',
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: Colors.black,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+// Custom painter for diamond shapes
+class DiamondPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color.fromARGB(255, 218, 165, 32) // Darker yellow
+      ..style = PaintingStyle.fill;
+
+    // Create diamond path with vertices at top, bottom, left, right
+    final path = Path();
+    path.moveTo(size.width / 2, 0); // Top vertex
+    path.lineTo(size.width, size.height / 2); // Right vertex
+    path.lineTo(size.width / 2, size.height); // Bottom vertex
+    path.lineTo(0, size.height / 2); // Left vertex
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
