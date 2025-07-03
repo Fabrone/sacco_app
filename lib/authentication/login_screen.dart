@@ -16,22 +16,62 @@ class LoginScreenState extends State<LoginScreen> {
   final _emailOrIdController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Perform login and navigate to home
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _performLogin(AuthProvider authProvider) async {
     if (_formKey.currentState!.validate()) {
       try {
-        await authProvider.login(
-          _emailOrIdController.text,
+        final result = await authProvider.login(
+          _emailOrIdController.text.trim(),
           _passwordController.text,
         );
+
+        if (mounted) {
+          if (result['success'] == true) {
+            _showSnackBar(result['message'] ?? 'Login successful!');
+            
+            // Navigate to home after successful login
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context, rootNavigator: true).pushReplacementNamed('/home');
+            });
+          } else {
+            // Handle login errors
+            String errorMessage = result['message'] ?? 'Login failed';
+            
+            // Handle field-specific errors
+            if (result['errors'] != null && result['errors'] is Map) {
+              final errors = result['errors'] as Map<String, dynamic>;
+              List<String> errorMessages = [];
+              
+              errors.forEach((field, messages) {
+                if (messages is List) {
+                  errorMessages.addAll(messages.map((msg) => msg.toString()));
+                } else {
+                  errorMessages.add(messages.toString());
+                }
+              });
+              
+              if (errorMessages.isNotEmpty) {
+                errorMessage = errorMessages.join('\n');
+              }
+            }
+            
+            _showSnackBar(errorMessage, isError: true);
+          }
+        }
       } catch (e) {
-        // Mock API, ignore errors
-      }
-      // Navigate to home after submission, regardless of API result
-      if (mounted) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context, rootNavigator: true).pushNamed('/home');
-        });
+        if (mounted) {
+          _showSnackBar('An unexpected error occurred. Please try again.', isError: true);
+        }
       }
     }
   }
@@ -67,7 +107,7 @@ class LoginScreenState extends State<LoginScreen> {
                     MediaQuery.of(context).padding.bottom,
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0), // Form padding
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -77,14 +117,16 @@ class LoginScreenState extends State<LoginScreen> {
                       InputField(
                         controller: _emailOrIdController,
                         label: 'Email/Identification Number',
+                        keyboardType: TextInputType.text,
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter email or identification number';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
+                      
                       InputField(
                         controller: _passwordController,
                         label: 'Password',
@@ -93,16 +135,18 @@ class LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Please enter password';
                           }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
                           return null;
                         },
                       ),
                       const SizedBox(height: 20),
+                      
                       ElevatedButton(
                         onPressed: authProvider.isLoading
                             ? null
-                            : () {
-                                _performLogin(authProvider);
-                              },
+                            : () => _performLogin(authProvider),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           minimumSize: const Size(200, 50),
@@ -113,6 +157,18 @@ class LoginScreenState extends State<LoginScreen> {
                                 'Sign In/Log In',
                                 style: TextStyle(color: Colors.white),
                               ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).pushNamed('/register');
+                        },
+                        child: const Text(
+                          'Don\'t have an account? Sign Up',
+                          style: TextStyle(color: Colors.green),
+                        ),
                       ),
                     ],
                   ),
@@ -150,7 +206,7 @@ class InputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Input field padding
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

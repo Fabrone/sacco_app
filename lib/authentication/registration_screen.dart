@@ -15,16 +15,29 @@ class RegistrationScreen extends StatefulWidget {
 class RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _applicantTypeController = TextEditingController();
   final _idNumberController = TextEditingController();
-  final _genderController = TextEditingController();
   final _dobController = TextEditingController();
+  
+  String? _selectedApplicantType;
+  String? _selectedGender;
   bool _termsAccepted = false;
+
+  final List<String> _applicantTypes = [
+    'Corporate/Business',
+    'Individual',
+    'Child',
+  ];
+
+  final List<String> _genders = [
+    'Male',
+    'Female',
+    'Other',
+  ];
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.now().subtract(const Duration(days: 6570)), // 18 years ago
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -35,26 +48,68 @@ class RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
-  // Perform registration and navigate to login
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _performRegistration(AuthProvider authProvider) async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _termsAccepted) {
       try {
-        await authProvider.register(
-          _fullNameController.text,
-          _applicantTypeController.text,
-          _idNumberController.text,
-          _genderController.text,
+        final result = await authProvider.register(
+          _fullNameController.text.trim(),
+          _selectedApplicantType!,
+          _idNumberController.text.trim(),
+          _selectedGender!,
           _dobController.text,
         );
+
+        if (mounted) {
+          if (result['success'] == true) {
+            _showSnackBar(result['message'] ?? 'Registration successful!');
+            
+            // Navigate to login after successful registration
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              Navigator.of(context, rootNavigator: true).pushReplacementNamed('/login');
+            });
+          } else {
+            // Handle registration errors
+            String errorMessage = result['message'] ?? 'Registration failed';
+            
+            // Handle field-specific errors
+            if (result['errors'] != null && result['errors'] is Map) {
+              final errors = result['errors'] as Map<String, dynamic>;
+              List<String> errorMessages = [];
+              
+              errors.forEach((field, messages) {
+                if (messages is List) {
+                  errorMessages.addAll(messages.map((msg) => msg.toString()));
+                } else {
+                  errorMessages.add(messages.toString());
+                }
+              });
+              
+              if (errorMessages.isNotEmpty) {
+                errorMessage = errorMessages.join('\n');
+              }
+            }
+            
+            _showSnackBar(errorMessage, isError: true);
+          }
+        }
       } catch (e) {
-        // Mock API, ignore errors
+        if (mounted) {
+          _showSnackBar('An unexpected error occurred. Please try again.', isError: true);
+        }
       }
-      // Navigate to login after submission, regardless of API result
-      if (mounted) {
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context, rootNavigator: true).pushNamed('/login');
-        });
-      }
+    } else if (!_termsAccepted) {
+      _showSnackBar('Please accept the Terms & Conditions to continue.', isError: true);
     }
   }
 
@@ -89,7 +144,7 @@ class RegistrationScreenState extends State<RegistrationScreen> {
                     MediaQuery.of(context).padding.bottom,
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0), // Form padding
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -100,47 +155,153 @@ class RegistrationScreenState extends State<RegistrationScreen> {
                         controller: _fullNameController,
                         label: 'Full Name',
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter your full name';
                           }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      InputField(
-                        controller: _applicantTypeController,
-                        label: 'Applicant Type',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter applicant type';
+                          if (value.trim().length < 2) {
+                            return 'Full name must be at least 2 characters';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
+                      
+                      // Applicant Type Dropdown
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Applicant Type',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedApplicantType,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.green, width: 2),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              hint: const Text('Select applicant type'),
+                              items: _applicantTypes.map((String type) {
+                                return DropdownMenuItem<String>(
+                                  value: type,
+                                  child: Text(type),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedApplicantType = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select applicant type';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
                       InputField(
                         controller: _idNumberController,
                         label: 'Identification Number',
                         keyboardType: TextInputType.number,
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.trim().isEmpty) {
                             return 'Please enter identification number';
                           }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      InputField(
-                        controller: _genderController,
-                        label: 'Gender',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter gender';
+                          if (value.trim().length < 6) {
+                            return 'ID number must be at least 6 characters';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
+                      
+                      // Gender Dropdown
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Gender',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedGender,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.green, width: 2),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              hint: const Text('Select gender'),
+                              items: _genders.map((String gender) {
+                                return DropdownMenuItem<String>(
+                                  value: gender,
+                                  child: Text(gender),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedGender = newValue;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select gender';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
                       InputField(
                         controller: _dobController,
                         label: 'Date of Birth',
@@ -154,6 +315,7 @@ class RegistrationScreenState extends State<RegistrationScreen> {
                         },
                       ),
                       const SizedBox(height: 20),
+                      
                       Row(
                         children: [
                           Checkbox(
@@ -171,18 +333,18 @@ class RegistrationScreenState extends State<RegistrationScreen> {
                               'Terms & Conditions',
                               style: TextStyle(
                                 color: Colors.blue,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
+                      
                       ElevatedButton(
-                        onPressed: _termsAccepted && !authProvider.isLoading
-                            ? () {
-                                _performRegistration(authProvider);
-                              }
-                            : null,
+                        onPressed: authProvider.isLoading
+                            ? null
+                            : () => _performRegistration(authProvider),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           minimumSize: const Size(200, 50),
@@ -228,7 +390,7 @@ class InputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Input field padding
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

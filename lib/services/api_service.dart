@@ -1,42 +1,140 @@
-import 'package:sacco_app/models/member_data.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/member_data.dart';
 
 class ApiService {
-  final String baseUrl = 'https://api.anfalsacco.com';
+  static const String baseUrl = 'http://165.22.28.112:8074/api';
+  
+  // Token management
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
+  Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
+
+  Future<void> _removeToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+  }
+
+  // Helper method to get headers
+  Future<Map<String, String>> _getHeaders({bool includeAuth = false}) async {
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (includeAuth) {
+      final token = await _getToken();
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+    }
+
+    return headers;
+  }
 
   // Authentication APIs
   Future<Map<String, dynamic>> login(String emailOrId, String password) async {
-    // POST $baseUrl/auth/login
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
-    return {
-      'success': true,
-      'token': 'mock_jwt_token',
-      'user': {
-        'id': '12345',
-        'name': 'Fabron Naligu',
-        'memberNumber': 'MEM001'
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'email_or_id': emailOrId,
+          'password': password,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Save token if provided
+        if (data['token'] != null) {
+          await _saveToken(data['token']);
+        } else if (data['data'] != null && data['data']['token'] != null) {
+          await _saveToken(data['data']['token']);
+        }
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Login successful',
+          'data': data['data'] ?? data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Login failed',
+          'errors': data['errors'] ?? {},
+        };
       }
-    };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Unable to connect to server',
+        'error': e.toString(),
+      };
+    }
   }
 
   Future<Map<String, dynamic>> register(String fullName, String applicantType, String idNumber, String gender, String dob) async {
-    // POST $baseUrl/auth/register
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
-    return {
-      'success': true,
-      'message': 'Registration successful',
-      'memberNumber': 'MEM${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}'
-    };
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'full_name': fullName,
+          'applicant_type': applicantType,
+          'id_number': idNumber,
+          'gender': gender,
+          'date_of_birth': dob,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Registration successful',
+          'data': data['data'] ?? data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Registration failed',
+          'errors': data['errors'] ?? {},
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: Unable to connect to server',
+        'error': e.toString(),
+      };
+    }
   }
 
-  // Member Data APIs
+  // Logout
+  Future<void> logout() async {
+    await _removeToken();
+  }
+
+  // Check if user is authenticated
+  Future<bool> isAuthenticated() async {
+    final token = await _getToken();
+    return token != null;
+  }
+
+  // Mock APIs for other functionality (to be updated later)
   Future<MemberData> getMemberData(String memberNumber) async {
-    // GET $baseUrl/members/{memberNumber}
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return MemberData(
-      memberName: 'Fabron Naligu',
+      memberName: 'John Doe',
       memberNumber: memberNumber,
       savingsBalance: 116000.00,
       loansBalance: 46000.00,
@@ -47,9 +145,7 @@ class ApiService {
   }
 
   Future<List<TransactionData>> getTransactionHistory(String memberNumber) async {
-    // GET $baseUrl/members/{memberNumber}/transactions
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return [
       TransactionData(
         id: 'TXN001',
@@ -59,77 +155,27 @@ class ApiService {
         status: 'Completed',
         description: 'Monthly savings deposit',
       ),
-      TransactionData(
-        id: 'TXN002',
-        type: 'Loan Payment',
-        amount: 3000.00,
-        date: DateTime.now().subtract(const Duration(days: 5)),
-        status: 'Completed',
-        description: 'Loan installment payment',
-      ),
     ];
   }
 
-  // Savings APIs
-  Future<Map<String, dynamic>> initiateSavingsPayment(String memberNumber, double amount) async {
-    // POST $baseUrl/savings/deposit
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
-    return {
-      'success': true,
-      'transactionId': 'SAV${DateTime.now().millisecondsSinceEpoch}',
-      'paybill': '8751990',
-      'accountNumber': memberNumber,
-      'amount': amount,
-    };
-  }
-
-  Future<Map<String, dynamic>> confirmSavingsPayment(String transactionId) async {
-    // POST $baseUrl/savings/confirm
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-    // Mock response - replace with actual API call
-    return {
-      'success': true,
-      'message': 'Savings payment confirmed',
-      'newBalance': 121000.00,
-    };
-  }
-
-  // Loan APIs
   Future<Map<String, dynamic>> calculateLoanEligibility(String memberNumber) async {
-    // GET $baseUrl/loans/eligibility/{memberNumber}
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return {
       'success': true,
       'maxLoanAmount': 150000.00,
-      'interestRate': 1.0, // 1% per month
-      'maxTerm': 36, // months
+      'interestRate': 1.0,
+      'maxTerm': 36,
     };
   }
 
   Future<List<GuarantorData>> getAvailableGuarantors(String memberNumber) async {
-    // GET $baseUrl/guarantors/available/{memberNumber}
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return [
       GuarantorData(
         memberName: 'Jane Smith',
         memberNumber: 'MEM002',
         guaranteedAmount: 0,
         availableAmount: 50000.00,
-      ),
-      GuarantorData(
-        memberName: 'Bob Johnson',
-        memberNumber: 'MEM003',
-        guaranteedAmount: 0,
-        availableAmount: 75000.00,
-      ),
-      GuarantorData(
-        memberName: 'Alice Brown',
-        memberNumber: 'MEM004',
-        guaranteedAmount: 0,
-        availableAmount: 60000.00,
       ),
     ];
   }
@@ -139,21 +185,16 @@ class ApiService {
     double requestedAmount,
     List<Map<String, dynamic>> guarantors,
   ) async {
-    // POST $baseUrl/loans/request
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 2));
     return {
       'success': true,
       'loanRequestNumber': 'LRQ${DateTime.now().millisecondsSinceEpoch}',
       'message': 'Loan request submitted successfully',
-      'estimatedProcessingTime': '2-3 business days',
     };
   }
 
   Future<LoanData> getCurrentLoan(String memberNumber) async {
-    // GET $baseUrl/loans/current/{memberNumber}
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return LoanData(
       loanId: 'LOAN001',
       requestedAmount: 50000.00,
@@ -167,10 +208,28 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> initiateSavingsPayment(String memberNumber, double amount) async {
+    await Future.delayed(const Duration(seconds: 1));
+    return {
+      'success': true,
+      'transactionId': 'SAV${DateTime.now().millisecondsSinceEpoch}',
+      'paybill': '8751990',
+      'accountNumber': memberNumber,
+      'amount': amount,
+    };
+  }
+
+  Future<Map<String, dynamic>> confirmSavingsPayment(String transactionId) async {
+    await Future.delayed(const Duration(seconds: 2));
+    return {
+      'success': true,
+      'message': 'Savings payment confirmed',
+      'newBalance': 121000.00,
+    };
+  }
+
   Future<Map<String, dynamic>> initiateLoanPayment(String memberNumber, double amount) async {
-    // POST $baseUrl/loans/payment
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return {
       'success': true,
       'transactionId': 'LP${DateTime.now().millisecondsSinceEpoch}',
@@ -181,9 +240,7 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> confirmLoanPayment(String transactionId) async {
-    // POST $baseUrl/loans/payment/confirm
-    await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 2));
     return {
       'success': true,
       'message': 'Loan payment confirmed',
@@ -194,11 +251,8 @@ class ApiService {
     };
   }
 
-  // Capital Share APIs
   Future<Map<String, dynamic>> topUpCapitalShare(String memberNumber, double amount) async {
-    // POST $baseUrl/capital-shares/topup
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return {
       'success': true,
       'transactionId': 'CS${DateTime.now().millisecondsSinceEpoch}',
@@ -207,11 +261,8 @@ class ApiService {
     };
   }
 
-  // Contact APIs
   Future<Map<String, dynamic>> submitContactMessage(String memberNumber, String subject, String message) async {
-    // POST $baseUrl/contact/message
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    // Mock response - replace with actual API call
+    await Future.delayed(const Duration(seconds: 1));
     return {
       'success': true,
       'ticketNumber': 'TKT${DateTime.now().millisecondsSinceEpoch}',
