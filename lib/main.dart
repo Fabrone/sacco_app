@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sacco_app/authentication/login_screen.dart';
 import 'package:sacco_app/authentication/registration_screen.dart';
-import 'package:sacco_app/authentication/welcome_screen.dart';
+//import 'package:sacco_app/authentication/welcome_screen.dart';
 import 'package:sacco_app/screens/home_screen.dart';
 import 'package:sacco_app/screens/terms_and_conditions_screen.dart';
 import 'package:sacco_app/screens/savings_payment_screen.dart';
@@ -41,7 +41,7 @@ class SaccoApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        home: const WelcomeScreen(),
+        home: const HomeScreen(),
         routes: {
           '/register': (context) => const RegistrationScreen(),
           '/login': (context) => const LoginScreen(),

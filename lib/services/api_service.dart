@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/member_data.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://165.22.28.112:8074/api';
+  static const String baseUrl = 'http://165.22.28.112:8069/api/';
   
   // Token management
   Future<String?> _getToken() async {
