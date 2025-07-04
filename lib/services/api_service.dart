@@ -134,7 +134,7 @@ class ApiService {
   Future<MemberData> getMemberData(String memberNumber) async {
     await Future.delayed(const Duration(seconds: 1));
     return MemberData(
-      memberName: 'John Doe',
+      memberName: 'Fabron Naligu',
       memberNumber: memberNumber,
       savingsBalance: 116000.00,
       loansBalance: 46000.00,
@@ -172,7 +172,7 @@ class ApiService {
     await Future.delayed(const Duration(seconds: 1));
     return [
       GuarantorData(
-        memberName: 'Jane Smith',
+        memberName: 'Elton Nyamato',
         memberNumber: 'MEM002',
         guaranteedAmount: 0,
         availableAmount: 50000.00,
